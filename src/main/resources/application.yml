@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: health-check
+
+server:
+  port: 8080
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Deliberately narrow: these are the only two endpoints reachable over HTTP.
+        include: health,info
+  endpoint:
+    health:
+      # Intended to be scraped by orchestrators, so component detail is visible. Restrict this
+      # before exposing the service beyond a trusted network.
+      show-details: always
+      show-components: always
+      # Worst first. DEGRADED must sit above UP so the aggregator surfaces it.
+      status:
+        order: DOWN,OUT_OF_SERVICE,UNKNOWN,DEGRADED,UP
+      probes:
+        # Enables the livenessState and readinessState contributors behind Kubernetes-style probes.
+        enabled: true
+      group:
+        liveness:
+          include: livenessState,ping
+        readiness:
+          include: readinessState,diskSpace
+
+info:
+  app:
+    name: ${spring.application.name}
+    description: Health check service built on Spring Boot ${spring-boot.version}
+    javaVersion: ${java.version}
